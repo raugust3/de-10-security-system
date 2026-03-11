@@ -1,7 +1,7 @@
 .global _start
 _start:
 	/* initialize addresses */
-	ldr sp, =0x800000    // Set stack pointer to the top of usable memory
+	ldr sp, =0x800000    // set stack pointer to the top of usable memory
     ldr r12, =MPCORE_PRIV_TIMER 
 	ldr r12, [r12]
     ldr r11, =LED_BASE 
@@ -11,6 +11,11 @@ _start:
 	ldr r9, =seg03_table
 	ldr r8, =SW_BASE
 	ldr r8, [r8]
+	ldr r7, =SEG_BASE1
+	ldr r7, [r7]
+	ldr r6, =seg45_table
+	ldr r5, =KEY_BASE
+	ldr r5, [r5]
     
     /* initialize timer registers */
     mov r0, #0          		// hundredths
@@ -29,13 +34,19 @@ _start:
     mov r4, #0b011      		// enable, auto-reload, no interrupt
     str r4, [r12, #0x08]
 	
-	/* clear 7seg */
+	/* reset 7seg */
 	str r0, [r10]
+	ldr r4, [r9, #16]
+	str r4, [r10]
+	ldr r4, [r6]
+	str r4, [r7]
 
 _read_switch:
     ldr r4, [r8]     			// Use r4 as a temporary scratch register
     tst r4, #1       
     beq _read_switch 
+	str r0, [r10]
+	str r0, [r7]
 	
 _main_loop:
 	bl _start_timer
@@ -83,17 +94,25 @@ _stop_timer:
 	bx lr 						// back to main loop
 
 _end:
-	push {r11}
-	ldr r11, [r9, #12]
-	str r11, [r10]
-	pop {r11}
-	b _end
+	ldr r4, [r9]
+	str r4, [r10]
+	
+	ldr r4, [r8]
+	tst r4, #1
+	bne _end
+	
+	ldr r4, [r5]
+	tst r4, #1
+	beq _end
+	
+	b _start
 
 .data
 // numbers 0, 1, 2, and 3 for 7seg
 num_table: 		.word 0x3F3F, 0x3F06, 0x3F5B, 0x3F4F
-// words in order: FAIL, PASS, BUS, CAR
-seg03_table: 	.word 0x71773038, 0x73776D6D, 0x007C3E6D, 0x00397731
+// words in order: FAIL, PASS, BUS, CAR, EADY
+seg03_table: 	.word 0x71773038, 0x73776D6D, 0x007C3E6D, 0x00397731, 0x79775E6E
+seg45_table: 	.word 0x00000031
 
 @@ CONSTANTS & ADDRESSES
 KEY_BASE: 			.word 0xFF200050

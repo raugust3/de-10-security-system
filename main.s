@@ -8,7 +8,7 @@ _start:
 	ldr r11, [r11]
 	ldr r10, =SEG_BASE0
 	ldr r10, [r10]
-	ldr r9, =word_table
+	ldr r9, =seg03_table
 	ldr r8, =SW_BASE
 	ldr r8, [r8]
     
@@ -93,7 +93,7 @@ _end:
 // numbers 0, 1, 2, and 3 for 7seg
 num_table: 		.word 0x3F3F, 0x3F06, 0x3F5B, 0x3F4F
 // words in order: FAIL, PASS, BUS, CAR
-word_table: 	.word 0x71773038, 0x73776D6D, 0x007C3E6D, 0x00397731
+seg03_table: 	.word 0x71773038, 0x73776D6D, 0x007C3E6D, 0x00397731
 
 @@ CONSTANTS & ADDRESSES
 KEY_BASE: 			.word 0xFF200050

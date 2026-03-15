@@ -134,7 +134,7 @@ _stop_timer:
 	bx lr 						// back to main loop
 
 _fill_colour:
-	push {r0-r4, r8-r10, lr}				// save some registers
+	push {r0-r3, r8-r10, lr}				// save some registers
 
 	mov r10, r4							// r10 = pointer to pixel data array
 	mov r9,#0							// r9 = y-coordinate counter (row)
@@ -154,7 +154,7 @@ _fill_colour:
 		cmp r9,#240						// check if all rows are drawn
 		bne 1b							// loop if y < 240
 
-	pop {r0-r4, r8-r10, lr} 			// bring back original register values
+	pop {r0-r3, r8-r10, lr} 			// bring back original register values
 	bx lr 								// return to loop
 
 _write_pixel:
@@ -171,21 +171,35 @@ _write_pixel:
 _check_choice:
 	push {r2, r4, r5, r8, lr}
 	ldr r4, [r5]		// Read Buttons
-	and r4, r4, #0xF	// Mask to only KEY0-KEY3
+	ands r4, r4, #0xF	// Mask to only KEY0-KEY3
+	beq _exit_choice
 
 	// Convert choice (0-3) in r8 to a bitmask (1, 2, 4, 8)
 	mov r2, #1
 	lsl r2, r2, r8		// If r8=2, r2 becomes 0b100 (4)
 
 	tst r4, r2			// Did they press the KEY corresponding to the choice?
+	
+	moveq r3, #0
+	beq _stop_timer
+	
 	movne r0, #0
 	strne r0, [r7]
 	ldrne r4, [r9, #4]
 	strne r4, [r10]
-	bne _end			// If NOT pressed (zero), keep waiting/running
+	bne _pass
 
 	pop {r2, r4, r5, r8, lr}
 	bx lr
+
+_exit_choice:
+	pop {r2, r4, r5, r8, lr}
+	bx lr
+
+_pass:
+	pop {r2, r4, r5, r8, lr}
+	ldr r4, =black
+	bl _fill_colour
 
 _end:
 	/* an attempt to make flashing lights :( */

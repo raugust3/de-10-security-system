@@ -1,7 +1,7 @@
 .global _start
 _start:
 	/* initialize addresses */
-	ldr sp, =0x800000			// set stack pointer to the top of usable memory
+	ldr sp, =0x800000					// set stack pointer to the top of usable memory
 	ldr r12, =MPCORE_PRIV_TIMER
 	ldr r12, [r12]
 	ldr r11, =LED_BASE
@@ -18,19 +18,19 @@ _start:
 	ldr r5, [r5]
 
 	/* initialize timer registers */
-	mov r0, #0			 		// hundredths
-	mov r1, #0					// seconds
-	ldr r2, =0x3FF				// LED starting pattern
-	ldr r3, =0x1FF				// LED update pattern
-	str r0, [r11]				// reset LEDs
+	mov r0, #0			 				// hundredths
+	mov r1, #0							// seconds
+	ldr r2, =0x3FF						// LED starting pattern
+	ldr r3, =0x1FF						// LED update pattern
+	str r0, [r11]						// reset LEDs
 
 	/* setup hardware timer */
 	ldr r4, =TIMEOUT
 	ldr r4, [r4]
-	str r4, [r12]				// load value
+	str r4, [r12]						// load value
 	mov r4, #0b01
-	str r4, [r12, #0xC] 		// clear interrupt bit
-	mov r4, #0b011				// enable, auto-reload, no interrupt
+	str r4, [r12, #0xC] 				// clear interrupt bit
+	mov r4, #0b011						// enable, auto-reload, no interrupt
 	str r4, [r12, #0x08]
 	
 	/* reset 7seg */
@@ -46,14 +46,14 @@ _start:
 	bl _fill_colour
 
 _read_switch:
-	ldr r4, [r8]				// Use r4 as a temporary scratch register
+	ldr r4, [r8]						// Use r4 as a temporary scratch register
 	tst r4, #1
 	beq _read_switch
 	str r2, [r11]
 	str r0, [r10]
 	str r0, [r7]
 	
-	ldr r8, [r12, #4]			// read the current "Counter" register (offset 0x4)
+	ldr r8, [r12, #4]					// read the current "Counter" register (offset 0x4)
 	and r8, r8, #0x3000
 	lsr r8, #12
 	cmp r8, #0
@@ -105,22 +105,22 @@ _start_timer:
 	
 	// calculate seconds
 	ldr r10, =100
-	cmp r0, r10					// if 0.01s >= 100
-	addge r1, r1, #1 			// increment the number of seconds
-	movge r0, #0 				// reset the number of 0.01 seconds that have passed
+	cmp r0, r10							// if 0.01s >= 100
+	addge r1, r1, #1 					// increment the number of seconds
+	movge r0, #0 						// reset the number of 0.01 seconds that have passed
 	
 	// reset timer flag bit
-	mov r9, #0b01 				// write 1 to reset/clear
+	mov r9, #0b01 						// write 1 to reset/clear
 	str r9, [r12, #0xC]
 	
-	pop {r9, r10, r11, r12}		// bring back original values for registers
-	bx lr 						// back to main loop
+	pop {r9, r10, r11, r12}				// bring back original values for registers
+	bx lr 								// back to main loop
 	
 _stop_timer:
 	// decrement an LED
 	and r3, r2
 	str r3, [r11]
-	cmp r3, #0					// if no LEDs are lit, end the program
+	cmp r3, #0							// if no LEDs are lit, end the program
 	/* clear vga */
 	ldreq r4, =black
 	ldreq r3, =0x001
@@ -131,10 +131,10 @@ _stop_timer:
 	streq r4, [r10]
 	beq _end_fail
 	lsr r3, #1
-	bx lr 						// back to main loop
+	bx lr 								// back to main loop
 
 _fill_colour:
-	push {r0-r3, r8-r10, lr}				// save some registers
+	push {r0-r3, r8-r10, lr}			// save some registers
 
 	mov r10, r4							// r10 = pointer to pixel data array
 	mov r9,#0							// r9 = y-coordinate counter (row)
@@ -170,15 +170,15 @@ _write_pixel:
 	
 _check_choice:
 	push {r2, r4, r5, r8, lr}
-	ldr r4, [r5]		// Read Buttons
-	ands r4, r4, #0xF	// Mask to only KEY0-KEY3
+	ldr r4, [r5]						// read Buttons
+	ands r4, r4, #0xF					// mask to only KEY0-KEY3
 	beq _exit_choice
 
 	// Convert choice (0-3) in r8 to a bitmask (1, 2, 4, 8)
 	mov r2, #1
-	lsl r2, r2, r8		// If r8=2, r2 becomes 0b100 (4)
+	lsl r2, r2, r8						// if r8=2, r2 becomes 0b100 (4)
 
-	tst r4, r2			// Did they press the KEY corresponding to the choice?
+	tst r4, r2							// did they press the KEY corresponding to the choice?
 	
 	moveq r3, #0
 	beq _fail
@@ -206,9 +206,6 @@ _pass:
 	bl _fill_colour
 
 _end_pass:
-	/* an attempt to make flashing lights :( */
-	// str r3, [r11]
-	// ror r3, r3, #31
 	ldr r8, =SW_BASE
 	ldr r8, [r8]
 	tst r3, #0x00000400
@@ -222,37 +219,56 @@ _end_pass:
 	b _start
 
 _end_fail:
-    // Ensure r6, r8, and r5 still hold their BASE ADDRESSES
-    // If they were clobbered, reload them here:
-    ldr r6, =0xff203040    // Audio Base
-    ldr r8, =0xff200040    // SW Base (Literal address)
-    ldr r5, =0xff200050    // KEY Base (Literal address)
+    ldr r6, =0xff203040    @ Audio
+    ldr r8, =0xff200040    @ SW
+    ldr r5, =0xff200050    @ KEY
+	ldr r9, =0x155			// LEDs
+	ldr r12, =0x2AA
+    
+    ldr r10, =0x20000000   @ STORE static volume in r10
+    mov r0, r10            @ Start with volume ON in r0
+    mov r7, #1             @ r7 is our toggle flag (1 = on, 0 = off)
+    
+    mov r1, #48            @ Pitch
+    mov r2, r1             @ Half-period counter
+    ldr r4, =200000        @ Pulse counter (~0.5s beeps)
 
-    ldr r0, =0x20000000    // Volume
-    mov r1, #48            // Pitch
-    mov r2, r1             // Counter
+_fail_loop:
+    @ --- PULSE LOGIC (The Beep Toggle) ---
+    subs r4, r4, #1
+    bne _audio_out         @ If not zero, skip the toggle
 
-_fail_audio:
-    // --- AUDIO SECTION ---
+    @ Toggle logic when r4 hits 0
+    ldreq r4, =200000      @ Reset pulse counter
+    eor r7, r7, #1         @ Flip flag: 1 -> 0 or 0 -> 1
+    cmp r7, #1
+	streq r12, [r11]       @ Write Pattern B
+    strne r9, [r11]        @ Write Pattern A
+    moveq r0, r10          @ If flag is 1, set volume to 0x20000000
+    movne r0, #0           @ If flag is 0, set volume to 0 (SILENCE)
+
+_audio_out:
+    @ --- AUDIO SECTION ---
     ldr r3, [r6, #4]       
     ands r3, r3, #0xff000000 
-    beq _input_check       
+    beq _input_check       @ If FIFO full, skip writing
     
-    str r0, [r6, #8]       
+    str r0, [r6, #8]       @ Write current volume (might be 0)
     str r0, [r6, #12]      
+    
     subs r2, r2, #1
     moveq r2, r1           
-    negeq r0, r0           
+    negeq r0, r0           @ This keeps the square wave oscillation
 
 _input_check:
-    // --- RESET SECTION ---
-    ldr r3, [r8]           // Read switch value into r3
-    tst r3, #1             // Check bit 0
-    bne _fail_audio         // If SW0 is ON, stay in fail
+    @ (Your existing reset checks)
+    ldr r3, [r8]           
+    tst r3, #1             
+    bne _fail_loop         
     
-    ldr r3, [r5]           // Read KEY value into r3
-    tst r3, #1             // Check bit 0
-    beq _fail_audio         // If KEY0 is NOT pressed, stay in fail
+    ldr r3, [r5]           
+    tst r3, #1             
+    beq _fail_loop         
     
     b _start
 

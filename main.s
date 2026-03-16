@@ -129,7 +129,7 @@ _stop_timer:
 	streq r0, [r7]
 	ldreq r4, [r9]
 	streq r4, [r10]
-	beq _end
+	beq _end_fail
 	lsr r3, #1
 	bx lr 						// back to main loop
 
@@ -181,7 +181,7 @@ _check_choice:
 	tst r4, r2			// Did they press the KEY corresponding to the choice?
 	
 	moveq r3, #0
-	beq _stop_timer
+	beq _fail
 	
 	movne r0, #0
 	strne r0, [r7]
@@ -195,31 +195,66 @@ _check_choice:
 _exit_choice:
 	pop {r2, r4, r5, r8, lr}
 	bx lr
+	
+_fail:
+	pop {r2, r4, r5, r8, lr}
+	b _stop_timer
 
 _pass:
 	pop {r2, r4, r5, r8, lr}
 	ldr r4, =black
 	bl _fill_colour
 
-_end:
+_end_pass:
 	/* an attempt to make flashing lights :( */
 	// str r3, [r11]
 	// ror r3, r3, #31
 	ldr r8, =SW_BASE
 	ldr r8, [r8]
-	
 	tst r3, #0x00000400
 	movne r3, #1
-	
 	ldr r4, [r8]
 	tst r4, #1
-	bne _end
-	
+	bne _end_pass
 	ldr r4, [r5]
 	tst r4, #1
-	beq _end
-	
+	beq _end_pass
 	b _start
+
+_end_fail:
+    // Ensure r6, r8, and r5 still hold their BASE ADDRESSES
+    // If they were clobbered, reload them here:
+    ldr r6, =0xff203040    // Audio Base
+    ldr r8, =0xff200040    // SW Base (Literal address)
+    ldr r5, =0xff200050    // KEY Base (Literal address)
+
+    ldr r0, =0x20000000    // Volume
+    mov r1, #48            // Pitch
+    mov r2, r1             // Counter
+
+_fail_audio:
+    // --- AUDIO SECTION ---
+    ldr r3, [r6, #4]       
+    ands r3, r3, #0xff000000 
+    beq _input_check       
+    
+    str r0, [r6, #8]       
+    str r0, [r6, #12]      
+    subs r2, r2, #1
+    moveq r2, r1           
+    negeq r0, r0           
+
+_input_check:
+    // --- RESET SECTION ---
+    ldr r3, [r8]           // Read switch value into r3
+    tst r3, #1             // Check bit 0
+    bne _fail_audio         // If SW0 is ON, stay in fail
+    
+    ldr r3, [r5]           // Read KEY value into r3
+    tst r3, #1             // Check bit 0
+    beq _fail_audio         // If KEY0 is NOT pressed, stay in fail
+    
+    b _start
 
 .data
 // numbers 0, 1, 2, and 3 for 7seg

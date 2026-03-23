@@ -190,10 +190,10 @@ _fill_colour:
 			bl _write_pixel				// call pixel-drawing subroutine
 			add r10,r10,#2				// move to next color in data
 			add r8,r8,#1				// increment x
-			cmp r8,#320					// have we reached the end of the row?
+			cmp r8, #WIDTH				// have we reached the end of the row?
 			bne 2b						// loop if not
 		add r9,r9,#1					// increment y
-		cmp r9,#240						// have we reached the end of the column?
+		cmp r9, #HEIGHT					// have we reached the end of the column?
 		bne 1b							// loop if not
 
 	pop {r0-r3, r8-r10, lr} 			// bring back original register values by popping them from the stack

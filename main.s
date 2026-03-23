@@ -175,40 +175,37 @@ _stop_timer:
 	bx lr 								// back to _main_loop
 
 /* subroutine responsible for filling the vga monitor with the correct pixels to display can image */
+/* optimized subroutine to fill the vga monitor */
 _fill_colour:
-	push {r0-r3, r8-r10, lr}			// save some registers by pushing them onto the stack
+    push {r0-r5, r8-r10, lr}            // added r4, r5 to the push for safety
+    
+    mov r10, r4                         // r10 = source pointer (your image data)
+    ldr r0, =PIX_BASE                   // r0 = destination base address (vga)
+    
+    mov r9, #0                          // y-coordinate counter
+    
+	1:  /* outer loop (rows) */
+		// calculate the start of the current row in the vga buffer
+		// row_offset = y << 10 (assuming BYTES_PER_ROW is 10)
+		lsl r1, r9, #BYTES_PER_ROW          
+		add r5, r0, r1                 	// r5 = pointer to the start of the current row in vga
 
-	mov r10, r4							// r10 = pointer to pixel data array
-	mov r9,#0							// r9 = y-coordinate counter (row)
-	mov r8,#0							// r8 = x-coordinate counter (column)
-	
-	/* two loops to draw each pixel (2D array implementation) */
-	1:	mov r8,#0						// reset x-counter for each new row
-		2:	mov r0, r8					// prepare r0 = x for write_pixel
-			mov r1, r9					// prepare r1 = y for write_pixel
-			ldrh r2, [r10]				// load 16-bit color value from memory
-			bl _write_pixel				// call pixel-drawing subroutine
-			add r10,r10,#2				// move to next color in data
-			add r8,r8,#1				// increment x
-			cmp r8, #WIDTH				// have we reached the end of the row?
-			bne 2b						// loop if not
-		add r9,r9,#1					// increment y
-		cmp r9, #HEIGHT					// have we reached the end of the column?
-		bne 1b							// loop if not
+		mov r8, #0                     	// reset x-counter for the new row
 
-	pop {r0-r3, r8-r10, lr} 			// bring back original register values by popping them from the stack
-	bx lr 								// return to the loop it was called from
+		2:  /* inner loop (pixels) */
+			ldrh r2, [r10], #2         	// load 16-bit color AND post-increment source pointer
+			strh r2, [r5], #2           // store 16-bit color AND post-increment destination pointer
 
-/* subroutine responsible for actually placing the pixel value into a pixel position */
-_write_pixel:
-	/* address = base + (y << 10) + (x << 1) */
-	lsl r1, r1, #BYTES_PER_ROW			// shift y-coord to get row offset
-	lsl r0, r0, #BYTES_PER_PIXEL		// shift x-coord to get pixel offset
-	add r1, r0							// combine x and y offsets
-	ldr r0, =PIX_BASE					// load vga base address
+			add r8, r8, #1              // increment x
+			cmp r8, #WIDTH              // reached 320?
+			bne 2b                      // loop x
 
-	strh r2, [r0,r1] 					// this is where pixel is written
-	bx lr 								// return to fill_colour
+			add r9, r9, #1              // increment y
+			cmp r9, #HEIGHT             // reached 240?
+			bne 1b                      // loop y
+
+    pop {r0-r5, r8-r10, lr}				// bring back original register values
+    bx lr								// return to the loop it was called from
 	
 /* subroutines responsible for checking if the user has made an input during the test */
 _check_choice:

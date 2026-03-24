@@ -42,8 +42,10 @@ _start:
 	
 	/* initialize and/or reset LEDs */
 	ldr r2, =0x3FF						// LED starting pattern (0b1111111111)
-	ldr r3, =0x1FF						// LED update pattern (0b0111111111)
 	str r0, [r11]						// reset LEDs to 0b0000000000
+	
+	/* round counter */
+	mov r3, #0
 	
 	/* note: r4 will act as the scratch register for storing intermediate values */
 
@@ -157,10 +159,10 @@ _start_timer:
 	limit has passed */
 _stop_timer:
 	/* once a second has passed, decrement an LED */
-	and r3, r2							// perform an AND operation with the current and new LED pattern
-	str r3, [r11]						// display the decremented LED pattern
+	lsr r2, #1							// NEW LINE
+	str r2, [r11]						// display the decremented LED pattern
 	
-	cmp r3, #0							// are there any more LEDs lit up?
+	cmp r2, #0							// are there any more LEDs lit up?
 	
 	/* if not, start the FAIL procedure */
 	ldreq r4, =fail						// load the hex values necessary to display FAIL the vga monitor  
@@ -171,7 +173,6 @@ _stop_timer:
 	streq r4, [r10]						// display it on SEG_BASE0
 	beq _end_fail						// run the subroutine to show the user that they've failed the test
 	
-	lsr r3, #1							// if so, decrement the LED pattern by 1
 	bx lr 								// back to _main_loop
 
 /* subroutine responsible for filling the vga monitor with the correct pixels to display can image */

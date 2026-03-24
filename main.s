@@ -86,23 +86,17 @@ _load_test:
 	and r8, r8, #0x3000					// perform an ADD operation with it to get a 'random' number
 	lsr r8, #12							// right-shift the result to get a range of numbers btwn 0-3
 	
-	// load VGA image
-    ldr r4, =image_table
-    ldr r4, [r4, r8, lsl #2]
-    
-    // load hex 0-3
-    ldr r1, =seg03_table
-    ldr r1, [r1, r8, lsl #2]
-    str r1, [r10]
-    
-    // load hex 4-5
-    ldr r1, =seg45_table
-    ldr r1, [r1, r8, lsl #2]
-    str r1, [r7]
+    ldr r4, =image_table				// load VGA image
+    ldr r4, [r4, r8, lsl #2]			// equivalent to ldr r4, [image_table, r8 * 4]
+    bl _fill_colour						// run the subroutine to fill all pixels of the vga to the chosen image 
 	
-	mov r1, #0							// reset timer value
-	
-	bl _fill_colour 					// run the subroutine to fill all pixels of the vga to the chosen image 
+    ldr r4, =seg03_table				// load hex 0-3
+    ldr r4, [r4, r8, lsl #2]			// equivalent to ldr r1, [seg03_table, r8 * 4]
+    str r4, [r10]						// display to 7seg
+    
+    ldr r4, =seg45_table				// load hex 4-5
+    ldr r4, [r4, r8, lsl #2]			// equivalent to ldr r1, [seg45_table, r8 * 4]
+    str r4, [r7]						// display to 7seg			
 	
 /* all roads lead back to _main_loop */
 _main_loop:

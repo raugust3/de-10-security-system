@@ -155,7 +155,7 @@ _stop_timer:
 	bleq _fill_colour					// run the subroutine to fill all pixels of the vga to the chosen image
 	moveq r0, #0						// prepare a '0' in binary
 	streq r0, [r7]						// use it to clear SEG_BASE1			
-	ldreq r4, =0x73776D6D				// load the word FAIL
+	ldreq r4, =0x71773038				// load the word FAIL
 	streq r4, [r10]						// display it on SEG_BASE0
 	beq _end_fail						// run the subroutine to show the user that they've failed the test
 	

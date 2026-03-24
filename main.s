@@ -224,7 +224,7 @@ _check_choice:
 	tst r4, r2							// did they press the correct KEY corresponding to the choice?
 	
 	/* procedure for incorrect choice */
-	moveq r3, #0						// clear LEDs by preparing a '0'
+	moveq r2, #0						// clear LEDs by preparing a '0'
 	beq _fail							// pop the registers early and go to _stop_timer
 	
 	/* procedure for correct choice */
@@ -245,7 +245,7 @@ _exit_choice:
 /* sub-subroutine to work around the lack of conditional execution codes available for the pop instruction */
 _fail:
 	pop {r2, r4, r5, r8, lr}			// bring back original register values by popping them from the stack
-	/* go to _stop_timer with r3 = 0 so that the LEDs are cleared and the fail procedure defined previously 
+	/* go to _stop_timer with r2 = 0 so that the LEDs are cleared and the fail procedure defined previously 
 		can be reused */
 	b _stop_timer						
 
@@ -272,7 +272,6 @@ _end_fail:
     ldr r6, =AUDIO_BASE    				// load the address of the audio core into r6
     ldr r8, =SW_BASE    				// load address of switches into r8
     ldr r5, =KEY_BASE    				// load address of push buttons into r5
-	ldr r9, =0x155						// prepare LED pattern of 0101010101
 	ldr r12, =0x2AA						// prepare LED pattern of 1010101010
     
     ldr r10, =0x20000000   				// load static volume value into r10
@@ -293,14 +292,18 @@ _fail_loop:
     eor r7, r7, #1         				// flip toggle flag
     cmp r7, #1							// toggle flag comparison with '1'
 	streq r12, [r11]       				// if flag is 1, write 1010101010 to the LEDs
-    strne r9, [r11]        				// if flag is 0, write 0101010101 to the LEDs
+	lsleq r12, r12, #1
+	
+    strne r12, [r11]        			// if flag is 0, write 0101010101 to the LEDs
+	lsrne r12, r12, #1
+	
     moveq r0, r10          				// If flag is 1, set volume to 0x20000000
     movne r0, #0           				// If flag is 0, set volume to 0 (silence)
 
 /* function responsible for playing the audio */
 _audio_out:
-    ldr r3, [r6, #4]       				// read the first-in-first-out (FIFO) register
-    ands r3, r3, #0xff000000 			// check if the right channel (and by extension, the left channel) has space for audio samples
+    ldr r9, [r6, #4]       				// read the first-in-first-out (FIFO) register
+    ands r9, r9, #0xff000000 			// check if the right channel (and by extension, the left channel) has space for audio samples
     beq _input_check       				// if the FIFO is full, skip writing
     
 	/* if the FIFO is not full, let's write some audio samples into it */
@@ -312,11 +315,11 @@ _audio_out:
     negeq r0, r0           				// invert the volume to make a square wave oscillation
 
 _input_check:
-    ldr r3, [r8]      					// load state of switches into r3 (our new scratch register)    
-    tst r3, #1             				// is sw0 off?
+    ldr r9, [r8]      					// load state of switches into r9 (our new scratch register)    
+    tst r9, #1             				// is sw0 off?
     bne _fail_loop         				// if not, loop to _fail_loop
-    ldr r3, [r5]           				// if so, load the state of push buttons into the scratch register
-    cmp r3, #3             				// is KEY0 on?
+    ldr r9, [r5]           				// if so, load the state of push buttons into the scratch register
+    cmp r9, #3             				// is KEY0 on?
     bne _fail_loop         				// if not, loop to _fail_loop
     
     b _start							// if so, reset the program by going to _start

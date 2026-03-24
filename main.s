@@ -158,9 +158,9 @@ _stop_timer:
 /* subroutine responsible for filling the vga monitor with the correct pixels to display can image */
 /* optimized subroutine to fill the vga monitor */
 _fill_colour:
-    push {r0-r5, r8-r10, lr}            // added r4, r5 to the push for safety
+    push {r0-r5, r8-r10, lr}            // reuse registers for subroutine
     
-    mov r10, r4                         // r10 = source pointer (your image data)
+    mov r10, r4                         // r10 = source pointer (image data)
     ldr r0, =PIX_BASE                   // r0 = destination base address (vga)
     
     mov r9, #0                          // y-coordinate counter
@@ -195,11 +195,10 @@ _check_choice:
 	ands r4, r4, #0xF					// mask to show only KEY0-KEY3
 	// if no buttons have been pressed, pop the registers early and return to _main_loop
 	beq _exit_choice					
-
-	/* if a button was pressed, convert the choice (0-3) into a bitmask (1, 2, 4, 8) */
-	mov r2, #1							// initialize a now-free register
-	/* remember: r8 contains the result of the 'random' number generation */
-	lsl r2, r2, r8						// ex. if r8=2, r2 becomes 0b100 (4)
+	
+	/* if a button was pressed, look up the answer in the table */
+    ldr r2, =answer_table               // load table base
+    ldr r2, [r2, r8, lsl #2]            // get the specific answer for image in r8
 
 	tst r4, r2							// did they press the correct KEY corresponding to the choice?
 	
@@ -325,8 +324,11 @@ _input_check:
     b _start							// if so, reset the program by going to _start
 
 .data
-image_table:
+image_table: // image LUT used in _load_image subroutine
 	.word bus, car, cycle, light
+
+answer_table: // captcha image answers used in _check_choice subroutine
+	.word 1, 2, 4, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 // words in order: BUS, CAR, CYCLE, LIGHT, [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], READY
 seg03_table: 	.word 0x007C3E6D, 0x00397731, 0x6E393879, 0x306F7478, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x79775E6E

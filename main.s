@@ -40,8 +40,6 @@ _start:
 	mov r0, #0			 				// hundredths
 	mov r1, #0							// seconds
 	
-	/* initialize and/or reset LEDs */
-	ldr r2, =0x3FF						// LED starting pattern (0b1111111111)
 	str r0, [r11]						// reset LEDs to 0b0000000000
 	
 	/* round counter */
@@ -75,8 +73,10 @@ _read_switch:
 	ldr r4, [r8]						// load the state of the switches into the scratch register
 	tst r4, #1							// has the user triggered sw0?
 	beq _read_switch					// if not, keep waiting
-	
+
+_load_test:	
 	/* if sw0 is triggered, start the test */
+	ldr r2, =0x3FF						// LED starting pattern (0b1111111111)
 	str r2, [r11]						// turn on all LEDs
 	str r0, [r10]						// clear SEG_BASE0
 	str r0, [r7]						// CLEAR SEG_BASE1
@@ -251,19 +251,39 @@ _fail:
 
 /* sub-subroutine to work around the lack of conditional execution codes available for the pop instruction */
 _pass:
-	pop {r2, r4, r5, r8, lr}			// bring back original register values by popping them from the stack
-	ldr r4, =pass						// load the hex values necessary to display PASS on the vga monitor 
-	bl _fill_colour						// run the subroutine to fill all pixels of the vga to the chosen image
+    pop {r2, r4, r5, r8, lr}
+    add r3, r3, #1         				// increment the round counter
+    cmp r3, #3              			// have we reached 3 rounds?
+    beq _end_pass           			// if yes, go to the final win screen
+
+    /* if not 3, show PASS screen then loop for a new round */
+    ldr r4, =pass           
+    bl _fill_colour         
+
+    /* small delay so the user sees the PASS screen */
+    ldr r4, =50000000
+    delay_lp: subs r4, r4, #1
+       bne delay_lp
+
+    b _load_test          				// new round!
 
 /* loop that plays when the user makes the correct choice during the test */
 _end_pass:
-	ldr r8, =SW_BASE					// load address of switches into r8
+    ldr r4, =bus             			// maybe a new "ACCESS GRANTED" vga image
+    bl _fill_colour
+    
+    /* display "OPEN" or "GOOD" on Hex */
+    ldr r4, [r9, #28]                 // example hex code for "OPEE"
+    str r4, [r10]
+    
+_wait_for_reset:
+    ldr r8, =SW_BASE					// load address of switches into r8
 	ldr r4, [r8]						// load state of switches into the scratch register
 	tst r4, #1							// is sw0 off?
-	bne _end_pass						// if not, loop
+	bne _wait_for_reset					// if not, loop
 	ldr r4, [r5]						// if so, load the state of push buttons into the scratch register
 	cmp r4, #3							// is KEY0 and KEY1 on?
-	bne _end_pass						// if not, loop
+	bne _wait_for_reset					// if not, loop
 	
 	b _start							// if so, reset the program by going to _start
 
@@ -327,8 +347,8 @@ _input_check:
 .data
 // numbers 0, 1, 2, and 3 for 7seg
 num_table: 		.word 0x3F3F, 0x3F06, 0x3F5B, 0x3F4F
-// words in order: FAIL, PASS, BUS, CAR, READY, CYCLE, LIGHT
-seg03_table: 	.word 0x71773038, 0x73776D6D, 0x007C3E6D, 0x00397731, 0x79775E6E, 0x6E393879, 0x306F7478
+// words in order: FAIL, PASS, BUS, CAR, READY, CYCLE, LIGHT, OPEN
+seg03_table: 	.word 0x71773038, 0x73776D6D, 0x007C3E6D, 0x00397731, 0x79775E6E, 0x6E393879, 0x306F7478, 0x3F737937
 // words in order: READY, CYCLE, LIGHT
 seg45_table: 	.word 0x00000031, 0x00000039, 0x00000038
 // the following lists are the VGA buffer values for the images to be displayed on the VGA monitor

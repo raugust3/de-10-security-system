@@ -38,9 +38,10 @@ _start:
 	mov r0, #0			 				// hundredths
 	mov r1, #0							// seconds
 	
-	str r0, [r11]						// reset LEDs to 0b0000000000
+	/* initialize LEDs to blank */
+	str r0, [r11]	
 	
-	/* round counter */
+	/* initialize round counter */
 	mov r3, #0
 	
 	/* note: r4 will act as the scratch register for storing intermediate values */
@@ -83,8 +84,8 @@ _load_test:
 	
 	/* now that the test has started, we need to pick a random image to test on */
 	ldr r8, [r12, #4]					// read the current counter register of the private timer
-	and r8, r8, #0x3000					// perform an ADD operation with it to get a 'random' number
-	lsr r8, #12							// right-shift the result to get a range of numbers btwn 0-3
+	and r8, r8, #0x70000				// perform an ADD operation with it to get a 'random' number
+	lsr r8, #16							// right-shift the result to get a range of numbers btwn 0-3
 	
     ldr r4, =image_table				// load VGA image
     ldr r4, [r4, r8, lsl #2]			// equivalent to ldr r4, [image_table, r8 * 4]
@@ -325,10 +326,10 @@ _input_check:
 
 .data
 image_table: // image LUT used in _load_image subroutine
-	.word bus, car, cycle, light
+	.word bus, car, cycle, light, bus, car, cycle, light
 
 answer_table: // captcha image answers used in _check_choice subroutine
-	.word 1, 2, 4, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	.word 1, 2, 4, 8, 1, 2, 4, 8, 0, 0, 0, 0, 0, 0, 0, 0
 
 // words in order: BUS, CAR, CYCLE, LIGHT, [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], READY
 seg03_table: 	.word 0x007C3E6D, 0x00397731, 0x6E393879, 0x306F7478, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x79775E6E

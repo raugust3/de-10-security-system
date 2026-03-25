@@ -139,10 +139,13 @@ _start_timer:
 /* subroutine responsible for visually showing that a second has passed and to check if the test time 
 	limit has passed */
 _stop_timer:
+	push {lr}
 	/* once a second has passed, decrement an LED */
-	lsr r2, #1							// NEW LINE
+	lsr r2, #1							// decrement LEDs
 	str r2, [r11]						// display the decremented LED pattern
 	
+	bl _play_beep            			// play the 0.1s confirmation beep
+	pop {lr}
 	cmp r2, #0							// are there any more LEDs lit up?
 	
 	/* if not, start the FAIL procedure */
@@ -155,6 +158,33 @@ _stop_timer:
 	beq _end_fail						// run the subroutine to show the user that they've failed the test
 	
 	bx lr 								// back to _main_loop
+
+/* subroutine to play a short 0.1s beep */
+_play_beep:
+    push {r0-r4, r6, r9, lr}
+    ldr r6, =AUDIO_BASE
+    mov r0, #0x20000000      // volume
+    ldr r4, =4800            // 4800 samples = 0.1s at 48kHz
+    mov r1, #48              // pitch (half-period)
+    mov r2, r1               // half-period counter
+
+_beep_loop:
+    ldr r9, [r6, #4]         // check FIFO
+    ands r9, r9, #0xff000000 
+    beq _beep_loop           // wait if full
+    
+    str r0, [r6, #8]         // write left
+    str r0, [r6, #12]        // write right
+    
+    subs r2, r2, #1
+    moveq r2, r1             // reset half-period
+    negeq r0, r0             // invert square wave
+    
+    subs r4, r4, #1          // decrement sample counter
+    bne _beep_loop
+    
+    pop {r0-r4, r6, r9, lr}
+    bx lr
 
 /* subroutine responsible for filling the vga monitor with the correct pixels to display can image */
 /* optimized subroutine to fill the vga monitor */

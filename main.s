@@ -241,7 +241,7 @@ _pass:
     bl _fill_colour         
 
     /* small delay so the user sees the PASS screen */
-    ldr r4, =50000000
+    ldr r4, =3000000000
     delay_lp: subs r4, r4, #1
        bne delay_lp
 
@@ -331,10 +331,10 @@ image_table: // image LUT used in _load_image subroutine
 answer_table: // captcha image answers used in _check_choice subroutine
 	.word 1, 2, 4, 8, 4, 1, 4, 1, 2, 2, 2, 8, 8, 1, 2, 8
 
-// words in order: BUSSES, CARS, CYCLES, LIGHTS, [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], READY
-seg03_table: 	.word 0x6D6D796D, 0x3977316D, 0x3938796D, 0x6F74786D, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x79775E6E
-// words in order: BUSSES, [BLANK], CYCLES, LIGHTS, [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], [BLANK], READY
-seg45_table: 	.word 0x00007C3E, 0x00000000, 0x0000396E, 0x00003830, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000031
+// words in order: BUSSES, CARS, CYCLES, LIGHTS, BABIES, CARS, CATS, CYCLES, DEER, DOGS, LAPTOP, LIONS, PEOPLE, PICS, TIGERS, TURTLE, READY
+seg03_table: 	.word 0x6D6D796D, 0x3977316D, 0x3938796D, 0x6F74786D, 0x7C30796D, 0x3977316D, 0x3977786D, 0x3938796D, 0x5E797931, 0x5E3F6F6D, 0x73783F73, 0x303F376D, 0x3F733879, 0x7330396D, 0x6F79316D, 0x31783879, 0x79775E6E
+// words in order: BUSSES, [BLANK], CYCLES, LIGHTS, BABIES, [BLANK], [BLANK], CYCLES, [BLANK], [BLANK], LAPTOP, LIONS, PEOPLE, [BLANK], TIGERS, TURTLE, READY
+seg45_table: 	.word 0x00007C3E, 0x00000000, 0x0000396E, 0x00003830, 0x00007C77, 0x00000000, 0x00000000, 0x0000396E, 0x00000000, 0x00000000, 0x00003877, 0x00000038, 0x00007379, 0x00000000, 0x00007830, 0x0000783E, 0x00000031
 
 // the following lists are the VGA buffer values for the images to be displayed on the VGA monitor
 bus0: 		// raw pixel data for the bus image in rgb565 format

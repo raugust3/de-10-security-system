@@ -163,8 +163,8 @@ _stop_timer:
 _play_beep:
     push {r0-r4, r6, r9, lr}
     ldr r6, =AUDIO_BASE
-    mov r0, #0x20000000      // volume
-    ldr r4, =4800            // 4800 samples = 0.1s at 48kHz
+    mov r0, #0x10000000      // volume
+    ldr r4, =480            // 480 samples
     mov r1, #48              // pitch (half-period)
     mov r2, r1               // half-period counter
 

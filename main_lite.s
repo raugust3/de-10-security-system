@@ -85,7 +85,7 @@ _load_test:
 	/* now that the test has started, we need to pick a random image to test on */
 	ldr r8, [r12, #4]					// read the current counter register of the private timer
 	and r8, r8, #0x30000				// perform an ADD operation with it to get a 'random' number
-	lsr r8, #16							// right-shift the result to get a range of numbers btwn 0-7
+	lsr r8, #16							// right-shift the result to get a range of numbers btwn 0-3
 	
     ldr r4, =image_table				// load VGA image
     ldr r4, [r4, r8, lsl #2]			// equivalent to ldr r4, [image_table, r8 * 4]

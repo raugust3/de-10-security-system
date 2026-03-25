@@ -163,8 +163,8 @@ _stop_timer:
 _play_beep:
     push {r0-r4, r6, r9, lr}
     ldr r6, =AUDIO_BASE
-    mov r0, #0x20000000      // volume
-    ldr r4, =4800            // 4800 samples = 0.1s at 48kHz
+    mov r0, #0x40000000      // volume
+    ldr r4, =480            // 480 samples
     mov r1, #48              // pitch (half-period)
     mov r2, r1               // half-period counter
 
@@ -304,7 +304,7 @@ _end_fail:
     ldr r5, =KEY_BASE    				// load address of push buttons into r5
 	ldr r12, =0x2AA						// prepare LED pattern of 1010101010
     
-    ldr r10, =0x20000000   				// load static volume value into r10
+    ldr r10, =0x40000000   				// load static volume value into r10
     mov r0, r10            				// start with volume ON in r0
     mov r7, #1             				// r7 is our toggle flag for volume (1 = on, 0 = off)
     

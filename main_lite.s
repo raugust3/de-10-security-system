@@ -163,8 +163,8 @@ _stop_timer:
 _play_beep:
     push {r0-r4, r6, r9, lr}
     ldr r6, =AUDIO_BASE
-    mov r0, #0x40000000      // volume
-    ldr r4, =480            // 480 samples
+    mov r0, #0x20000000      // volume
+    ldr r4, =4800            // 4800 samples = 0.1s at 48kHz
     mov r1, #48              // pitch (half-period)
     mov r2, r1               // half-period counter
 
@@ -255,9 +255,20 @@ _exit_choice:
 /* sub-subroutine to work around the lack of conditional execution codes available for the pop instruction */
 _fail:
 	pop {r2, r4, r5, r8, lr}			// bring back original register values by popping them from the stack
-	/* go to _stop_timer with r2 = 0 so that the LEDs are cleared and the fail procedure defined previously 
-		can be reused */
-	b _stop_timer						
+	/* clear hardware */
+    mov r0, #0
+    str r0, [r11]                       // turn off all LEDs
+    str r0, [r7]                        // clear SEG_BASE1
+    
+    /* update Displays */
+    ldr r4, =fail                       // point to FAIL image data
+    bl _fill_colour                     // update VGA
+    
+    ldr r4, =0x71773038                 // hex pattern for "FAIL"
+    str r4, [r10]                       // display on SEG_BASE0
+    
+    /* enter alarm loop */
+    b _end_fail						
 
 /* sub-subroutine to work around the lack of conditional execution codes available for the pop instruction */
 _pass:
@@ -304,7 +315,7 @@ _end_fail:
     ldr r5, =KEY_BASE    				// load address of push buttons into r5
 	ldr r12, =0x2AA						// prepare LED pattern of 1010101010
     
-    ldr r10, =0x40000000   				// load static volume value into r10
+    ldr r10, =0x20000000   				// load static volume value into r10
     mov r0, r10            				// start with volume ON in r0
     mov r7, #1             				// r7 is our toggle flag for volume (1 = on, 0 = off)
     
